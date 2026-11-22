@@ -19,7 +19,7 @@
   }
   document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
 
-  const groups = {all:'全部', styles:'视觉风格', motion:'交互动效', principles:'设计原理', studies:'风格目录', color:'色彩实验'};
+  const groups = {all:'全部', styles:'视觉风格', motion:'交互动效', principles:'设计原理', studies:'风格目录', color:'色彩实验', components:'开源组件'};
   const sourceList = [
     ['用大白话向 AI 描述 10 种 App / 小程序高级动画','SpicyTater-','触点扩散、拖动让位、惯性吸附和状态反馈。','BV1gAtm69ER4'],
     ['为什么瑞士风格 70 年都不过时？','路北路陈','模块网格、非对称构图、无衬线字与单一强调色。','BV1hWar6SEVP'],
@@ -40,21 +40,43 @@
     ['顶级配色网站推荐','模型观察员','用本地样例体验浏览色卡、锁色生成及渐变预览。','BV11U4y1V74C'],
     ['现代终端配色：Catppuccin、Dracula 与 Starship','智子实验室清洁管理员','把主题色用于相同界面，并切换终端提示符的信息段。','BV1HhD3BbEUW']
   ];
+  const batchName = ['','第一批','第二批','第三批'];
+  const seasonURL = 'https://space.bilibili.com/3546892183013759/lists/8268661?type=season';
+  const projectURL = 'https://github.com/uiverse-io/galaxy';
+  const directIds = ['BV1gAtm69ER4','BV1xb421v7Hf','BV184BrB8E4N'];
+  const seasonEntries = window.AtlasSeason.sources;
+  const seasonIds = new Set(seasonEntries.map(e=>e.bv));
+  const legacy = sourceList.map(([title, author, summary, bv], i) => ({
+    title, author, summary, bv, batch:i < 9 ? 1 : 2, number:i+1
+  }));
+  const sourceMap = new Map(legacy.map(e=>[e.bv,e]));
+  for (const entry of [...window.AtlasVideos.sources, ...seasonEntries]) {
+    if (!sourceMap.has(entry.bv)) sourceMap.set(entry.bv,{...entry,batch:3});
+  }
+  const videoCount = sourceMap.size;
+  sourceMap.set('season',{bv:'season',title:'UI交互动画',author:'Max商业动画制作',url:seasonURL,batch:3});
+  sourceMap.set('galaxy',{bv:'galaxy',title:'Uiverse Galaxy',author:'Uiverse.io',url:projectURL,batch:3});
   const specialMotion = new Set(['spring-flick','liquid-switch','face-id']);
-  const providers = [window.AtlasStyles, window.AtlasMotion, window.AtlasDetails, window.AtlasPractice, window.AtlasStyleLab, window.AtlasFilm, window.AtlasColor];
-  const registry = providers.flatMap(provider => provider.items.map(item => ({
-    ...item, provider, group: item.group || (provider === window.AtlasStyles ? 'styles' : provider === window.AtlasMotion || specialMotion.has(item.id) ? 'motion' : 'principles')
-  })));
+  const newProviders = [window.AtlasGalaxy, window.AtlasVideos, window.AtlasSeason];
+  const providers = [...newProviders, window.AtlasStyles, window.AtlasMotion, window.AtlasDetails, window.AtlasPractice, window.AtlasStyleLab, window.AtlasFilm, window.AtlasColor];
+  const registry = providers.flatMap(provider => provider.items.map(item => {
+    const key = typeof item.source === 'number' ? legacy[item.source-1].bv : item.source;
+    const sourceIds = [...new Set([key, ...(item.sources || [])])];
+    return {...item,provider,source:key,sourceIds,batch:newProviders.includes(provider) ? 3 : sourceMap.get(key).batch,
+      group:item.group || (provider === window.AtlasStyles ? 'styles' : provider === window.AtlasMotion || specialMotion.has(item.id) ? 'motion' : 'principles')};
+  }));
   const order = ('button-states style-palette-50 color-balance one-take style-pattern-49 input-follow terminal-themes information-priority ' +
     'hsl-studio hue-wheel scene-palette palette-moods palette-picker gradient-studio nested-surfaces split-workspace search-context empty-progress ' +
     'swiss glass neo cyber brutal y2k minimal luxury material fluent apple bento dashboard nordic memphis aurora editorial ' +
     'theme-reveal reorder checklist snap-slider expand stepper ripple delete-arc card-stack tag-shift spring-flick liquid-switch face-id ' +
     'continuous-corner icon-grid visual-hierarchy type-rhythm').split(' ');
-  const idx = new Map(order.map((id, i) => [id, i]));
+  const allIds = [...new Set(['galaxy-browser','season-gallery',...newProviders.flatMap(provider => provider.items.map(item=>item.id)),...order])];
+  const idx = new Map(allIds.map((id, i) => [id, i]));
   registry.sort((a,b) => (idx.get(a.id) ?? 99) - (idx.get(b.id) ?? 99));
   const byId = new Map(registry.map(v => [v.id,v]));
   const counts = Object.fromEntries(Object.keys(groups).map(k => [k, registry.filter(v => k === 'all' || k === v.group).length]));
   const features = [
+    {id:'galaxy-browser',en:'Uiverse Galaxy',title:'Galaxy 组件库',art:'<div class="collection-art galaxy-art"><i></i><i></i><i></i><i></i></div>'},
     {id:'color-balance',en:'Color Balance',title:'配色面积与平衡',art:'<img class="fan-art" src="./assets/chromatic-fan.svg" alt="">'},
     {id:'continuous-corner',en:'Continuous Curvature',title:'连续曲率圆角',art:'<img class="sculpt" src="./assets/continuous.webp" alt="">'},
     {id:'glass',en:'Glassmorphism',title:'磨砂玻璃态',art:'<i class="glass-orb"></i><i class="hero-glass"></i>'},
@@ -70,8 +92,14 @@
   let searchOpener = null;
   const html = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const sampleURL = (id,variant) => '#sample/' + id + (variant ? '/' + variant : '');
-  const sourceLabel = n => (n > 9 ? '第二批' : '第一批') + ' · ' + String((n-1)%9+1).padStart(2,'0');
-  const matchGroup = (item,key) => key === 'all' || (key === 'second' ? item.source > 9 : item.group === key);
+  function sourceLabel(entry) {
+    if (entry.bv === 'galaxy') return '开源项目';
+    if (entry.bv === 'season') return '视频合集';
+    if (entry.number) return batchName[entry.batch] + ' · ' + String((entry.number-1)%9+1).padStart(2,'0');
+    return seasonIds.has(entry.bv) ? '合集原片' : '第三批 · 单支视频';
+  }
+  const sourceURL = entry => entry.url || 'https://www.bilibili.com/video/' + entry.bv + '/';
+  const matchGroup = (item,key) => key === 'all' || (key === 'third' ? item.batch === 3 : key === 'second' ? item.batch === 2 : item.group === key);
   const refQueries = {'button-states':'t=103','nested-surfaces':'t=79','split-workspace':'t=127','search-context':'t=257','information-priority':'t=197','empty-progress':'t=347','one-take':'t=5','hsl-studio':'p=6','hue-wheel':'p=9','color-balance':'p=15','palette-moods':'p=17','gradient-studio':'t=39','terminal-themes':'t=32'};
   const related = {
     10:['stepper'],11:['continuous-corner'],12:['visual-hierarchy','type-rhythm'],
@@ -79,13 +107,13 @@
     14:['minimal','neo','glass','bento','y2k','editorial','aurora'],
     15:['theme-reveal'],16:['visual-hierarchy'],17:[],18:[]
   };
-  const secondCount = registry.filter(it => it.source > 9).length;
+  const batchCounts = {second: registry.filter(it=>it.batch===2).length, third: registry.filter(it=>it.batch===3).length};
 
   const indexURL = group => group === 'all' ? '#index' : '#index/' + group;
   const videoURL = number => 'https://www.bilibili.com/video/' + sourceList[number-1][3] + '/';
   const two = n => String(n).padStart(2,'0');
   function buildHero() {
-    return '<section class="hero wrap" aria-labelledby="hero-heading"><div class="hero-copy"><div class="hero-kicker">UI 设计参考库</div><h1 id="hero-heading">界面视觉<em>效果图鉴</em></h1><p>把两批 18 支设计视频里的风格、配色与交互，变成 ' + registry.length + ' 个可以打开、比较和动手操作的界面样本。</p><div class="hero-actions"><a class="btn primary" href="#sources/2">' + icon('book') + '打开第二批演示</a><a class="btn" href="#compare/swiss/glass">' + icon('compare') + '风格对照</a></div></div><div class="feature" id="feature"></div></section>';
+    return '<section class="hero wrap" aria-labelledby="hero-heading"><div class="hero-copy"><div class="hero-kicker">UI 设计参考库</div><h1 id="hero-heading">界面视觉<em>效果图鉴</em></h1><p>浏览视频里的视觉风格、配色和交互动效。从合集定位设计案例，或打开 Galaxy 的 3,802 个组件亲手试用。</p><div class="hero-actions"><a class="btn primary" href="#sources/3">' + icon('book') + '打开第三批演示</a><a class="btn" href="#compare/swiss/glass">' + icon('compare') + '风格对照</a></div></div><div class="feature" id="feature"></div></section>';
   }
   function paintFeature() {
     const container = document.querySelector('#feature');
@@ -102,7 +130,7 @@
   function paintCatalog() {
     const filtered = registry.filter(item => matchGroup(item, activeGroup));
     const row = document.querySelector('.filter-row');
-    row.innerHTML = Object.entries({all:'全部',second:'第二批',...groups}).map(([key, label]) => '<a class="filter ' + (key === activeGroup ? 'active' : '') + '" href="' + indexURL(key) + '" ' + (key === activeGroup ? 'aria-current="true"' : '') + '>' + label + '<small>' + (key === 'second' ? secondCount : counts[key]) + '</small></a>').join('');
+    row.innerHTML = Object.entries({all:'全部',third:'第三批',second:'第二批',...groups}).map(([key, label]) => '<a class="filter ' + (key === activeGroup ? 'active' : '') + '" href="' + indexURL(key) + '" ' + (key === activeGroup ? 'aria-current="true"' : '') + '>' + label + '<small>' + (batchCounts[key] ?? counts[key]) + '</small></a>').join('');
     if (row.scrollWidth > row.clientWidth) {
       const visible = row.getBoundingClientRect(), selected = row.querySelector('.active').getBoundingClientRect();
       if (selected.right > visible.right) row.scrollLeft += selected.right - visible.right;
@@ -141,23 +169,32 @@
     const same = registry.filter(it => it.group === item.group);
     const i = same.indexOf(item);
     const prev = same[(i+same.length-1)%same.length], next = same[(i+1)%same.length];
-    const source = sourceList[item.source-1];
+    const source = sourceMap.get(item.source);
     const refQuery = item.refQuery || refQueries[item.id] || '';
-    const original = videoURL(item.source) + (refQuery ? '?' + refQuery.replace(/^\?/, '') : '');
-    const backLabel = returnTo.startsWith('#sources') ? '返回视频目录' : '返回效果索引';
+    const original = sourceURL(source) + (refQuery ? '?' + refQuery.replace(/^\?/, '') : '');
+    const backLabel = returnTo.startsWith('#sources') ? '返回来源目录' : '返回效果索引';
     main.innerHTML = '<article class="wrap page"><a class="back" href="' + returnTo + '">' + icon('grid') + backLabel + '</a><div class="page-heading"><h1>' + html(item.title) + '</h1><p class="en" lang="en">' + html(item.en) + '</p></div>' +
-      '<div class="detail-layout"><div><div id="demo" class="demo-host"></div><nav class="demo-neighbors" aria-label="同类样本"><a href="' + sampleURL(prev.id) + '"><small>上一个' + groups[item.group] + '</small>' + html(prev.title) + '</a><a href="' + sampleURL(next.id) + '"><small>下一个' + groups[item.group] + '</small>' + html(next.title) + '</a></nav></div>' +
-      '<aside class="info-pane"><h2>观察要点</h2><p>' + html(item.summary) + '</p><div class="meta-tags">' + item.keywords.map(tag => '<span>' + html(tag) + '</span>').join('') + '</div><div class="info-block"><h3>参考视频 ' + sourceLabel(item.source) + '</h3><a class="video-link" href="' + original + '" target="_blank" rel="noopener noreferrer">' + html(source[0]) + icon('link') + '</a></div><div class="info-block"><a class="back" href="' + indexURL(item.group) + '">' + icon('grid') + '浏览全部' + groups[item.group] + '</a></div></aside></div></article>';
-    if (item.group === 'styles') {
+      '<div class="detail-layout' + (['galaxy-browser','season-gallery'].includes(item.id) ? ' library-wide' : '') + '"><div><div id="demo" class="demo-host"></div>' + (same.length>1 ? '<nav class="demo-neighbors" aria-label="同类样本"><a href="' + sampleURL(prev.id) + '"><small>上一个' + groups[item.group] + '</small>' + html(prev.title) + '</a><a href="' + sampleURL(next.id) + '"><small>下一个' + groups[item.group] + '</small>' + html(next.title) + '</a></nav>' : '') + '</div>' +
+      '<aside class="info-pane"><h2>观察要点</h2><p>' + html(item.summary) + '</p><div class="meta-tags">' + item.keywords.map(tag => '<span>' + html(tag) + '</span>').join('') + '</div><div class="info-block"><h3>' + sourceLabel(source) + '</h3><a class="video-link" href="' + original + '" target="_blank" rel="noopener noreferrer">' + html(source.title) + icon('link') + '</a></div><div class="info-block"><a class="back" href="' + indexURL(item.group) + '">' + icon('grid') + '浏览全部' + groups[item.group] + '</a></div></aside></div></article>';
+    if (item.provider === window.AtlasStyles) {
       const block = main.querySelector('.info-pane .info-block:last-child');
       const a = document.createElement('a');
       a.className='back compare-link'; a.href='#compare/' + item.id + '/' + next.id;
       a.innerHTML = icon('compare') + '与其他风格对照'; block.append(a);
     }
-    if (item.source > 9) {
+    if (item.batch >= 2) {
       const block = document.createElement('div'); block.className='info-block';
-      block.innerHTML='<a class="back" href="#sources/2">' + icon('book') + '第二批视频目录</a>';
+      block.innerHTML='<a class="back" href="#sources/' + item.batch + '">' + icon('book') + batchName[item.batch] + '来源目录</a>';
+      if (seasonIds.has(item.source) && item.id!=='season-gallery') {
+        block.insertAdjacentHTML('afterbegin','<a class="back" href="#sample/season-gallery/' + item.source + '">查看对应的合集条目</a> ');
+      }
       main.querySelector('.info-pane').append(block);
+    }
+    const extraSources = item.sourceIds.slice(1).map(id=>sourceMap.get(id)).filter(Boolean);
+    if (extraSources.length && item.provider!==window.AtlasSeason) {
+      const refs=document.createElement('details'); refs.className='source-more';
+      refs.innerHTML='<summary>相关原片 · ' + extraSources.length + '</summary>' + extraSources.map(e=>'<a class="video-link" href="' + html(sourceURL(e)) + '" target="_blank" rel="noopener noreferrer">' + html(e.title) + icon('link') + '</a>').join('');
+      main.querySelector('.info-block').append(refs);
     }
     const companionLinks = {
       'style-palette-50': [['作者的风格与色票目录', 'https://github.com/rxw2023/Front-end-Design-Styles']],
@@ -168,6 +205,25 @@
       link.className = 'video-link'; link.href = url;
       link.target = '_blank'; link.rel = 'noopener noreferrer';
       link.innerHTML = html(label) + icon('link'); main.querySelector('.info-block').append(link);
+    }
+    const componentLinks = {
+      'season-glass':['磨砂悬浮卡 · Codewithvinay','cards~Codewithvinay_afraid-dodo-14'],
+      'season-progress':['发光进度条 · NlghtM4re','loaders~NlghtM4re_silent-husky-54'],
+      'season-voice':['节奏声条 · JkHuger','loaders~JkHuger_sweet-starfish-100'],
+      'season-prompt':['搜索输入框 · ARUSH221617','inputs~ARUSH221617_fresh-bear-10'],
+      'sky-theme-switch':['日月云层开关 · Galahhad','switches~Galahhad_strong-squid-82'],
+      'liquid-switch':['日月云层开关 · Galahhad','switches~Galahhad_strong-squid-82'],
+      'planner-glass':['磨砂悬浮卡 · Codewithvinay','cards~Codewithvinay_afraid-dodo-14'],
+      'glass':['磨砂悬浮卡 · Codewithvinay','cards~Codewithvinay_afraid-dodo-14'],
+      'planner-flow':['发光进度条 · NlghtM4re','loaders~NlghtM4re_silent-husky-54'],
+      'empty-progress':['发光进度条 · NlghtM4re','loaders~NlghtM4re_silent-husky-54'],
+      'search-context':['搜索输入框 · ARUSH221617','inputs~ARUSH221617_fresh-bear-10']
+    };
+    if(componentLinks[item.id]){
+      const [label,slug]=componentLinks[item.id];
+      const block=document.createElement('div');block.className='info-block';
+      block.innerHTML='<h3>Galaxy 同类组件</h3><a class="back" href="'+sampleURL('galaxy-browser',slug)+'">'+icon('grid')+html(label)+'</a>';
+      main.querySelector('.info-pane').append(block);
     }
     cleanup = item.provider.render(item.id, document.querySelector('#demo'), variantId);
     document.title = item.title + ' · 形录 Form Atlas';
@@ -192,7 +248,7 @@
       return '<section class="comparison-panel"><div class="compare-select"><label for="style-' + side + '">样本 ' + side + '</label><select id="style-' + side + '">' + opts + '</select></div><div class="demo-host compared"></div><p>' + html(choice.variant?choice.item.title:choice.item.summary) + '</p><a class="back" href="' + sampleURL(choice.item.id,choice.variant) + '">' + icon('book') + '查看' + html(choice.title) + '样本</a></section>';
     }
     const focusedId = document.activeElement?.id;
-    main.innerHTML = '<article class="wrap page"><a class="back" href="' + returnTo + '">' + icon('grid') + (returnTo.startsWith('#sources') ? '返回视频目录' : '返回效果索引') + '</a><div class="page-heading"><h1>风格对照</h1><p class="compare-intro">分别选择两个样本，比较字体、材质、配色与控件的反馈。在同一份目录里选择两项，可以对照相同的示例内容。</p></div><div class="comparison">' + current.map(panel).join('') + '</div></article>';
+    main.innerHTML = '<article class="wrap page"><a class="back" href="' + returnTo + '">' + icon('grid') + (returnTo.startsWith('#sources') ? '返回来源目录' : '返回效果索引') + '</a><div class="page-heading"><h1>风格对照</h1><p class="compare-intro">分别选择两个样本，比较字体、材质、配色与控件的反馈。在同一份目录里选择两项，可以对照相同的示例内容。</p></div><div class="comparison">' + current.map(panel).join('') + '</div></article>';
     const disposers=[];
     main.querySelectorAll('.comparison-panel').forEach((col,i) => {
       const {item,variant}=current[i];
@@ -209,35 +265,59 @@
     if (previous !== 'compare') window.scrollTo(0,0);
     if (focusedId === 'style-A' || focusedId === 'style-B') document.getElementById(focusedId).focus({preventScroll:true});
   }
-  function sourceCard(entry, number) {
-    const demos = registry.filter(item => item.source === number);
-    const recommended = (related[number] || []).map(id => byId.get(id)).filter(Boolean);
+  function sourceCard(entry, repeated=false) {
+    const demos = registry.filter(item => item.sourceIds.includes(entry.bv));
+    const recommended = (related[entry.number] || []).map(id => byId.get(id)).filter(Boolean);
     const pills = items => items.map(item => '<a href="' + sampleURL(item.id) + '">' + html(item.title) + '</a>').join('');
     const article = document.createElement('article');
     article.className='source-card';
     const sample=demos[0];
-    article.innerHTML = '<a class="source-cover" aria-label="体验' + html(sample.title) + '" href="' + sampleURL(sample.id) + '"></a><div class="source-body"><div class="source-by">' + sourceLabel(number) + ' · ' + html(entry[1]) + '</div><h2>' + html(entry[0]) + '</h2><p>' + html(entry[2]) + '</p><div class="source-pills">' + pills(demos) + '</div>' +
+    const cover=sample?'<a class="source-cover" aria-label="体验' + html(sample.title) + '" href="' + sampleURL(sample.id) + '"></a>':'';
+    article.innerHTML = cover + '<div class="source-body"><div class="source-by">' + (repeated?'第一批复用 · 10 个动效':sourceLabel(entry)) + ' · ' + html(entry.author) + '</div><h2>' + html(entry.title) + '</h2><p>' + html(entry.summary || '') + '</p><div class="source-pills">' + pills(demos) + '</div>' +
       (recommended.length ? '<details class="source-more"><summary>相关的已有样本 · ' + recommended.length + '</summary><div class="source-pills">' + pills(recommended) + '</div></details>' : '') +
-      '<a class="video-link" href="' + videoURL(number) + '" target="_blank" rel="noopener noreferrer">观看原视频' + icon('link') + '</a></div>';
-    sample.provider.thumb(sample.id,article.querySelector('.source-cover'));
+      '<a class="video-link" href="' + html(sourceURL(entry)) + '" target="_blank" rel="noopener noreferrer">观看原视频' + icon('link') + '</a></div>';
+    if(sample)sample.provider.thumb(sample.id,article.querySelector('.source-cover'));
     return article;
   }
+  function thirdBatch(container,showRepeat) {
+    const article=document.createElement('section');
+    const total=seasonEntries.length;
+    article.innerHTML='<div class="collection-grid"><a class="collection galaxy" href="#sample/galaxy-browser"><div class="collection-visual" aria-hidden="true"><div class="collection-art galaxy-art"><i></i><i></i><i></i><i></i></div></div><div class="collection-copy"><small>开源组件库 · Uiverse.io</small><h2>Galaxy</h2><p>3,802 个组件，按 11 个类别、作者或名称浏览。</p><strong>浏览组件 ' + icon('grid') + '</strong></div></a>' +
+      '<a class="collection season" href="#sample/season-gallery"><div class="collection-visual" aria-hidden="true"><div class="collection-art frames-art"><i></i><i></i><i></i></div></div><div class="collection-copy"><small>视频合集 · Max商业动画制作</small><h2>UI 交互动画</h2><p>按主题或片名查找 '+total+' 支原片，打开对应的交互研究。</p><strong>浏览合集 ' + icon('book') + '</strong></div></a></div>';
+    const addSection = (title, children) => {
+      const heading=document.createElement('h3'); heading.className='source-heading'; heading.textContent=title;
+      const grid=document.createElement('div'); grid.className='source-grid'; children.forEach(x=>grid.append(x));
+      article.append(heading,grid);
+    };
+    const themed = registry.filter(item=>item.provider===window.AtlasSeason && item.id!=='season-gallery');
+    if(themed.length){
+      const label=document.createElement('h3');label.className='source-heading';label.textContent='合集中的主题演示';article.append(label);
+      const links=document.createElement('div');links.className='source-pills study-pills';
+      themed.forEach(item=>{const a=document.createElement('a');a.href=sampleURL(item.id);a.textContent=item.title;links.append(a);});article.append(links);
+    }
+    const ids=showRepeat ? [...directIds.slice(1),directIds[0]] : directIds.slice(1);
+    addSection('单支视频', ids.map(id=>sourceCard(sourceMap.get(id),id===directIds[0])));
+    container.append(article);
+  }
   function sources(part) {
-    page = 'sources';
-    const batch = part === '1' || part === '2' ? part : 'all';
-    returnTo = batch === 'all' ? '#sources' : '#sources/' + batch;
-    main.innerHTML = '<article class="wrap page"><a class="back" href="#index">' + icon('grid') + '返回效果索引</a><div class="page-heading"><h1>' + (batch === '2' ? '第二批视频演示' : batch === '1' ? '第一批视频演示' : '视频来源') + '</h1></div><p class="sources-deck">选择视频下的样本即可在本页体验，原视频可另外打开。</p><nav class="source-tabs" aria-label="选择视频批次">' +
-      [['all','全部 18 支'],['2','第二批 · 9 支'],['1','第一批 · 9 支']].map(([key,val]) => '<a class="filter ' + (key===batch?'active':'') + '" ' + (key===batch?'aria-current="page"':'') + ' href="#sources' + (key==='all'?'':'/'+key) + '">' + val + '</a>').join('') +
-      '</nav><div id="source-groups"></div></article>';
+    page='sources';
+    const selected=['1','2','3'].includes(part)?Number(part):0;
+    returnTo=selected?'#sources/'+selected:'#sources';
+    const heading=selected?batchName[selected]+'设计参考':'来源目录';
+    main.innerHTML='<article class="wrap page"><a class="back" href="#index">'+icon('grid')+'返回效果索引</a><div class="page-heading"><h1>'+heading+'</h1></div><p class="sources-deck">'+(selected===3?'从下面两个资料库进入，或按单支视频体验具体动效。':selected?'选择视频下的样本，即可在本页操作。':'共收录 '+videoCount+' 支不同视频和一个开源项目。选择批次即可找到对应演示。')+'</p><nav class="source-tabs" aria-label="选择批次"></nav><div id="source-groups"></div></article>';
+    const tabs=main.querySelector('.source-tabs');
+    for(const number of [0,3,2,1]){
+      const link=document.createElement('a'); link.className='filter'; link.href=number?'#sources/'+number:'#sources';link.textContent=number?batchName[number]:'全部来源';
+      if(number===selected){link.classList.add('active');link.setAttribute('aria-current','page');}tabs.append(link);
+    }
     const container=document.querySelector('#source-groups');
-    (batch==='all'?[2,1]:[Number(batch)]).forEach(n=>{
-      const section=document.createElement('section');
-      if(batch==='all')section.innerHTML='<h2 class="source-heading">'+(n===1?'第一批':'第二批')+'</h2>';
+    for(const number of selected?[selected]:[3,2,1]){
+      if(!selected){const header=document.createElement('h2');header.className='source-heading';header.textContent=batchName[number];container.append(header);}
+      if(number===3){thirdBatch(container,Boolean(selected));continue;}
       const grid=document.createElement('div');grid.className='source-grid';
-      sourceList.slice((n-1)*9,n*9).forEach((entry,i)=>grid.append(sourceCard(entry,(n-1)*9+i+1)));
-      section.append(grid);container.append(section);
-    });
-    document.title = (batch==='2'?'第二批演示':'视频来源') + ' · 形录 Form Atlas';
+      legacy.filter(e=>e.batch===number).forEach(e=>grid.append(sourceCard(e)));container.append(grid);
+    }
+    document.title=heading+' · 形录 Form Atlas';
     window.scrollTo(0,0);
   }
   function route(initial = false) {
@@ -249,7 +329,7 @@
     if (type === 'sample' && byId.has(param)) detail(byId.get(param),second);
     else if (type === 'sources') sources(param);
     else if (type === 'compare') compare(param,second);
-    else home(Object.hasOwn(groups,param) || param === 'second' ? param : 'all', type === 'index');
+    else home(Object.hasOwn(groups,param) || Object.hasOwn(batchCounts,param) ? param : 'all', type === 'index');
     document.querySelectorAll('[data-nav]').forEach(link => {
       const current = link.dataset.nav === (page === 'sources' ? 'sources' : 'index');
       link.classList.toggle('active', current);
@@ -273,8 +353,16 @@
         }
       }
     }
+    if (q.length) {
+      for (const e of seasonEntries) {
+        if (matchesAll([e.bv,e.title,e.author].join(' '))) matches.push({title:e.title,en:e.bv,url:sampleURL('season-gallery',e.bv),label:'UI交互动画 · 合集'});
+      }
+      for (const e of window.AtlasGalaxy.search(q.join(' '),12)) {
+        matches.push({title:e.title,en:e.en || '',url:sampleURL('galaxy-browser',e.id),label:'Galaxy 组件'});
+      }
+    }
     results.innerHTML = matches.length ? matches.map(match => '<a class="search-result" href="' + match.url + '"><strong>' + html(match.title) + '</strong><small lang="en">' + html(match.en) + '</small><i>' + html(match.label) + '</i></a>').join('') : '<p class="empty">没有匹配的样本。可以试试「圆角」「玻璃」或「回弹」。</p>';
-    document.querySelector('#search-status').textContent = '找到 ' + matches.length + ' 个样本';
+    document.querySelector('#search-status').textContent = '显示 ' + matches.length + ' 个结果';
   }
   function openSearch() {
     if (dialog.open) return;

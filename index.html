@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f9f5">
-  <meta name="description" content="可操作的 UI 视觉效果图鉴。从两批共 18 支视频查找界面风格、配色和可操作的交互样本。">
+  <meta name="description" content="可操作的 UI 视觉效果图鉴。从三批设计视频、动画合集和 Galaxy 开源组件库中查找可操作的视觉参考。">
   <title>形录 Form Atlas · 界面视觉效果图鉴</title>
   <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./base.css">
@@ -22,6 +22,14 @@
   <script defer src="./style-lab.js"></script>
   <script defer src="./film-library.js"></script>
   <script defer src="./color-library.js"></script>
+  <link rel="stylesheet" href="./galaxy-library.css">
+  <link rel="stylesheet" href="./video-library.css">
+  <link rel="stylesheet" href="./season-library.css">
+  <script defer src="./galaxy/index.js"></script>
+  <script defer src="./galaxy-library.js"></script>
+  <script defer src="./video-library.js"></script>
+  <script defer src="./composition.js"></script>
+  <script defer src="./season-library.js"></script>
   <script defer src="./atlas.js"></script>
 </head>
 <body>
@@ -29,12 +37,12 @@
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="#home" aria-label="形录 Form Atlas 首页"><img src="./assets/mark.svg" width="34" height="34" alt=""><span>形录</span><b lang="en">FORM ATLAS</b></a>
-      <nav class="topnav" aria-label="主导航"><a href="#index" data-nav="index">效果索引</a><a href="#sources" data-nav="sources">视频来源</a></nav>
+      <nav class="topnav" aria-label="主导航"><a href="#index" data-nav="index">效果索引</a><a href="#sources" data-nav="sources">来源目录</a></nav>
       <button class="open-search" type="button" data-search><span class="ico" data-icon="search"></span><span class="search-label">搜索图鉴</span><kbd>/</kbd></button>
     </div>
   </header>
   <main id="content" tabindex="-1"><noscript>请启用浏览器 JavaScript 以打开风格索引和交互动效。</noscript></main>
-  <footer class="wrap footer"><a class="footer-brand" href="#home"><img src="./assets/mark.svg" width="22" height="22" alt="">形录 <span lang="en">FORM ATLAS</span></a><div><a href="#sources">参考视频</a><button data-top type="button">回到顶部</button></div></footer>
+  <footer class="wrap footer"><a class="footer-brand" href="#home"><img src="./assets/mark.svg" width="22" height="22" alt="">形录 <span lang="en">FORM ATLAS</span></a><div><a href="#sources">来源目录</a><button data-top type="button">回到顶部</button></div></footer>
   <dialog id="search-dialog" aria-labelledby="search-title">
     <div class="search-head"><h2 id="search-title">搜索图鉴</h2><button type="button" class="icon-btn" data-close-search aria-label="关闭搜索"><span data-icon="close"></span></button></div>
     <label class="search-field"><span data-icon="search"></span><input id="search-field" type="search" autocomplete="off" placeholder="输入风格、效果或关键词" aria-label="搜索样本"></label>

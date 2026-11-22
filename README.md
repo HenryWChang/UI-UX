@@ -1,12 +1,22 @@
 # 形录 · Form Atlas
 
-两批共 18 支设计视频的静态参考网站。第一批有 34 个样本，第二批新增 18 个入口；其中两个风格目录分别收录 50 和 49 项，可以逐项切换或并排比较。
+中文静态 UI 设计参考网站，保留前两批的 52 个样本和两份可并排对照的风格目录。第三批加入单支视频重绘、含 184 支原片的动画合集和 Galaxy 的 3,802 个社区组件。
 
 ## 先看效果
 
-解压后双击 `index.html`，在首页点「打开第二批演示」。每张视频卡都列出了对应的练习。在样本页可以直接操作控件，并从「参考视频」回到原片。图鉴、配色工具和动画均可离线使用，原视频及作者网页需要联网。
+解压后双击 `index.html`，在首页点「打开第三批演示」。每张视频卡都列出了对应的练习。在样本页可以直接操作控件，并从「参考视频」回到原片。图鉴、配色工具和动画均可离线使用，原视频及作者网页需要联网。
 
 效果索引可以按批次和类别筛选。按 `/` 搜索中文或英文名称；选择某个风格后，可复制浏览器地址保存这一项。两个风格目录保留各自的编排，部分风格在两份目录中都会出现。
+
+## 第三批的入口
+
+- `#sources/3` 是第三批总目录。两张资料库卡片分别打开 Galaxy 和《UI交互动画》。下方的单支视频卡提供各自的本地演示与原片链接。
+- `#sample/galaxy-browser` 打开 Uiverse Galaxy。支持分类、作者、原始标签和组件文字搜索。选择组件可操作预览、切换底色、调节缩放并查看原始 HTML/CSS。站内保留了 3,802 份组件和两份开源许可。32 项原来引用外部图片，离线版使用已标注的替代图，原始代码仍可查看。
+- `#sample/season-gallery` 打开 Max商业动画制作的《UI交互动画》。可在 184 个条目间检索，把对应的视觉观察、可点选的色块构图与可操作的主题研究放在一起看，也可打开每支原片。118 项依据时间轴预览帧，可切换三个采样画面；66 项依据原片封面。每项标有观察依据。地址末尾加上原片 BV 号，可直接定位到那一条。
+- 微软 Planner 的两项演示分别展示磨砂任务条与悬浮深度、可转交任务的四列成员看板，以及进度轨道和带状转场。昼夜开关可以拆看云层、月坑和星点，比较 CSS 与保存状态的两种实现。部分样本还链接到可直接试用的 Galaxy 同类组件。
+- 再次发送的「10 种 App / 小程序高级动画」复用第一批的十项样本，第三批视频卡提供全部入口。
+
+[微软 Planner 原片](https://www.bilibili.com/video/BV1xb421v7Hf/) · [拟物化昼夜开关原片](https://www.bilibili.com/video/BV184BrB8E4N/) · [UI 交互动画合集](https://space.bilibili.com/3546892183013759/lists/8268661?type=season) · [10 种 App 动效原片](https://www.bilibili.com/video/BV1gAtm69ER4/) · [Galaxy 项目](https://github.com/uiverse-io/galaxy)
 
 ## 第二批的视频和演示
 
@@ -24,7 +34,7 @@
 
 ## 托管
 
-这是纯静态 HTML、CSS 和 JavaScript，解压即可使用。将 ZIP 中的文件及 `assets/` 一起放入已有站点的静态发布目录，保留相对路径，使 `index.html` 位于该目录的第一层。
+这是纯静态 HTML、CSS 和 JavaScript，解压即可使用。将 ZIP 中的文件及 `assets/`、`galaxy/` 文件夹一起放入已有站点的静态发布目录，保留相对路径，使 `index.html` 位于该目录的第一层。
 
 - 已有 GitHub 仓库关联 Cloudflare 时，将这些文件更新到当前部署所用的分支和发布目录，沿用站点已有的部署方式。
 - 用 GitHub Pages 从分支发布时，可将文件放在仓库根目录，选择相应分支和 `/(root)`。若使用 `docs/` 发布，将文件放入该目录。
@@ -33,6 +43,9 @@
 [GitHub Pages 发布目录文档](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 
 ## 源码结构
+
+- `galaxy-library.*` 是组件浏览器，`galaxy/index.js` 提供检索元数据，`galaxy/packs/` 按需提供本地组件和样式。发布时保留整个 `galaxy/` 文件夹。
+- `season-library.*` 提供合集目录和主题演示，`composition.js` 保存按预览分镜或封面归纳的色块与位置，`video-library.*` 提供 Planner 与昼夜开关的互动重绘。
 
 - `index.html`、`base.css`、`atlas.js` 提供首页、索引、搜索、视频映射和风格对照。
 - `styles-library.*`、`motion-library.*`、`detail-library.*` 包含第一批风格、动效和设计原理。
